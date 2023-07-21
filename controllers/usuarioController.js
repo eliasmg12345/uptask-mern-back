@@ -1,6 +1,7 @@
 import Usuario from "../models/Usuario.js";
 import generarId from "../helpers/generarId.js";
 import generarJWT from "../helpers/generarJWT.js";
+import { emailRegistro, emailOlvidePassword } from "../helpers/email.js";
 
 const registrar = async (req, res) => {
     //evitar regitros duplicados
@@ -15,8 +16,16 @@ const registrar = async (req, res) => {
         const usuario = new Usuario(req.body);
         usuario.token = generarId();
         //almacennando a la DB
-        const usuarioAlmacenado = await usuario.save();
-        res.json(usuarioAlmacenado)
+        await usuario.save();
+
+        //Enviar el email de confirmacion
+        emailRegistro({
+            email: usuario.email,
+            nombre: usuario.nombre,
+            token: usuario.token,
+        })
+
+        res.json({ msg: 'Usuario Creado Correctamente, Revisa tu Email para confirmar tu cuenta' })
 
     } catch (error) {
         console.log(error);
@@ -80,6 +89,14 @@ const olvidePassword = async (req, res) => {
     try {
         usuario.token = generarId();
         await usuario.save();
+
+        //Enviar el email
+        emailOlvidePassword({
+            email: usuario.email,
+            nombre: usuario.nombre,
+            token: usuario.token,
+        })
+
         res.json({ msg: "Hemos enviado un email con instrucciones" });
     } catch (error) {
         console.log(error);
