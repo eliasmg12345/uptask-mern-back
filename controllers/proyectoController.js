@@ -4,8 +4,8 @@ import Usuario from "../models/Usuario.js";
 const obtenerProyectos = async (req, res) => {
     const proyectos = await Proyecto.find({
         '$or': [
-            {'colaboradores': {$in: req.usuario}},
-            {'creador': {$in: req.usuario}},
+            { 'colaboradores': { $in: req.usuario } },
+            { 'creador': { $in: req.usuario } },
         ]
     }).select("-tareas");
 
@@ -25,13 +25,18 @@ const nuevoProyecto = async (req, res) => {
 const obtenerProyecto = async (req, res) => {
 
     const { id } = req.params;
-    const proyecto = await Proyecto.findById(id).populate('tareas').populate('colaboradores', 'nombre email');
+    const proyecto = await Proyecto.findById(id)
+        .populate({
+            path: "tareas",
+            populate: { path: "completado", select: "nombre" }
+        })
+        .populate('colaboradores', 'nombre email');
 
     if (!proyecto) {
         const error = new Error('No encontrado');
         return res.status(404).json({ msg: error.message });
     }
-    if (proyecto.creador.toString() !== req.usuario._id.toString() && !proyecto.colaboradores.some(colaborador => colaborador._id.toString()=== req.usuario._id.toString())) {
+    if (proyecto.creador.toString() !== req.usuario._id.toString() && !proyecto.colaboradores.some(colaborador => colaborador._id.toString() === req.usuario._id.toString())) {
         const error = new Error('Accion no valida');
         return res.status(401).json({ msg: error.message });
     }
